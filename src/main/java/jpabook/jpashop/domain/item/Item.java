@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToMany;
 import java.util.ArrayList;
 import java.util.List;
 import jpabook.jpashop.domain.Category;
+import jpabook.jpashop.exception.NotEnoughStockException;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -34,4 +35,19 @@ public abstract class Item {
     // @ManyToMany` 는 편리한 것 같지만, 중간 테이블(`CATEGORY_ITEM` )에 컬럼을 추가할 수 없고, 세밀하게 쿼리를 실행하기 어렵기 때문에 실무에서 사용하기에는 한계가 있다.
     // 중간 엔티티(`CategoryItem` 를 만들고 `@ManyToOne` , `@OneToMany`로 매핑해서 사용하자
     private List<Category> categories = new ArrayList<>();
+
+    // 비즈니스 로직
+    public void addStock(int quantity) {
+        this.stockQuantity += quantity;
+    }
+
+    public void removeStock(int quantity) {
+        int restStock = this.stockQuantity - quantity;
+
+        if (restStock < 0) {
+            throw new NotEnoughStockException("need more stock");
+        }
+
+        this.stockQuantity = restStock;
+    }
 }
