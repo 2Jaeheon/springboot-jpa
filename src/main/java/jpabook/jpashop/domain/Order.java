@@ -16,13 +16,16 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "orders")
 @Getter
 @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // 직접 객체 생성을 못하도록 함.
 public class Order {
 
     @Id
@@ -55,7 +58,7 @@ public class Order {
         member.getOrders().add(this);
     }
 
-    public void addOrderItems(OrderItem orderItem) {
+    public void addOrderItem(OrderItem orderItem) {
         orderItems.add(orderItem);
         orderItem.setOrder(this);
     }
@@ -63,5 +66,51 @@ public class Order {
     public void setDelivery(Delivery delivery) {
         this.delivery = delivery;
         delivery.setOrder(this);
+    }
+
+    // 생성 메서드
+    // 이렇게 복잡한 생성은 따로 생성 메서드가 있는 것이 좋다.
+    public static Order createOrder(Member member, Delivery delivery,
+        OrderItem... orderItems) {
+        Order order = new Order();
+        order.setMember(member);
+        order.setDelivery(delivery);
+        for (OrderItem orderItem : orderItems) {
+            order.addOrderItem(orderItem);
+        }
+        order.setStatus(OrderStatus.ORDER);
+        order.setOrderDate(LocalDateTime.now());
+        return order;
+    }
+
+    // 비즈니스 로직
+
+    /**
+     * 주문 취소
+     */
+    public void cancel() {
+        // 이미 배송완료되면 오류 발생해야함.
+        if (delivery.getStatus() == DeliveryStatus.COMP) {
+            throw new IllegalStateException("이미 배송완료된 상품은 취소가 불가능합니다.");
+        }
+
+        // 주문 상태를 CANCEL로 바꿔줘야함.
+        this.setStatus(OrderStatus.CANCEL);
+        // 주문했던 것들을 다 취소처리 해줘야함.
+        for (OrderItem orderItem : orderItems) {
+            orderItem.cancel();
+        }
+    }
+
+    // 조회 로직
+
+    /**
+     * 전체 주문 가격 조회
+     */
+    public int getTotalPrice() {
+        /*for (OrderItem orderItem : orderItems) {
+            totalPrice += orderItem.getTotalPrice();
+        }*/
+        return orderItems.stream().mapToInt(OrderItem::getTotalPrice).sum();
     }
 }
