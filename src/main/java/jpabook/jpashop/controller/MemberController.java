@@ -1,6 +1,7 @@
 package jpabook.jpashop.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.Member;
 import jpabook.jpashop.service.MemberService;
@@ -39,5 +40,17 @@ public class MemberController {
 
         memberService.join(member);
         return "redirect:/";
+    }
+
+    @GetMapping("/members")
+    public String list(Model model) {
+        // 이것도 Member를 그대로 List로 하는 것보다
+        // DTO를 실무레벨에서는 사용하는게 좋다.
+        // 여기서는 변경이 없이 출력만 하는 거니까 하는 것
+        // 하지만 API를 만들때 엔티티를 절대 넘기지 마라.
+
+        List<Member> members = memberService.findMembers();
+        model.addAttribute("members", members);
+        return "members/memberList";
     }
 }
